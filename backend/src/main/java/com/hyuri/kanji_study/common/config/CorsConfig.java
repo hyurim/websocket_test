@@ -11,7 +11,8 @@ public class CorsConfig implements WebMvcConfigurer {
         r.addMapping("/api/**")
                 .allowedOrigins(
                         "http://localhost:4173",
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "http://localhost:5174"
                 )
                 .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
                 .allowedHeaders("*")
