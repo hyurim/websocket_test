@@ -1,0 +1,11 @@
+<!-- src/main/resources/templates/kanji-detail.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head><meta charset="UTF-8"><title>Kanji</title></head>
+<body>
+<h2 th:text="${kanji.glyph}"></h2>
+<p><b>뜻:</b> <span th:text="${kanji.meaning}"></span></p>
+<p><b>훈독:</b> <span th:text="${kanji.kunyomi}"></span></p>
+<p><b>음독:</b> <span th:text="${kanji.onyomi}"></span></p>
+</body>
+</html>

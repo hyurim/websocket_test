@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kanji Study</title>
+  <style>
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background:#f6f6f6; }
+    .bar   { background:#1aa5ad; color:#fff; text-align:center; padding:14px 12px; font-weight:700; }
+    .sub   { background:#14939a; color:#dfffff; text-align:center; padding:8px 12px; font-size:14px; }
+    .wrap  { display:flex; align-items:center; justify-content:center; min-height:calc(100vh - 120px); }
+    .card  { background:#fff; width:min(520px, 92vw); border-radius:14px; padding:28px 24px; box-shadow:0 8px 24px rgba(0,0,0,.08); text-align:center; }
+    .kanji { font-size:72px; color:#ff6f00; margin:24px 0 12px; line-height:1; }
+    .row   { display:flex; gap:14px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+    .btn   { appearance:none; border:none; padding:12px 20px; border-radius:24px; background:#0ea5a7; color:#fff; font-weight:700; cursor:pointer; }
+    .btn.alt { background:#ffd400; color:#004a57; }
+    .btn.gray{ background:#e6eef0; color:#1e4b57; }
+    .reveal{ margin-top:14px; color:#0f4a5a; font-size:18px; }
+    .muted { color:#7a8b90; font-size:13px; margin-top:8px;}
+    .done  { padding:48px 16px; text-align:center; color:#125a63; font-size:18px; }
+    .meta  { margin-top:10px; color:#6b7d83; font-size:14px; }
+  </style>
+</head>
+<body>
+<div class="bar" th:text="${progress}">1/300</div>
+<div class="sub">공부시간: <span id="timer">0</span>초</div>
+
+<div class="wrap" th:if="${done}">
+  <div class="done">오늘 복습할 카드가 없습니다 🎉</div>
+</div>
+
+<div class="wrap" th:unless="${done}">
+  <div class="card">
+    <div class="kanji" th:text="${card.glyph}">靴下</div>
+
+    <div class="row">
+      <button class="btn gray" onclick="show('ko')">韓国語</button>
+      <button class="btn gray" onclick="show('hiragana')">ひらがな</button>
+    </div>
+
+    <div id="ko" class="reveal" style="display:none;">
+      <b>뜻:</b> <span th:text="${card.meaning}">양말</span>
+    </div>
+    <div id="hiragana" class="reveal" style="display:none;">
+      <div><b>훈독:</b> <span th:text="${kunyomiKana}">くつした</span></div>
+      <div><b>음독:</b> <span th:text="${onyomiKana}">か, げ</span></div>
+      <div class="meta">
+        <div><b>훈독 단어:</b> <span th:text="${kunyomiWord}">靴下</span></div>
+        <div><b>음독 단어:</b> <span th:text="${onyomiWord}">—</span></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:18px;">
+      <form th:action="@{/study/grade/{id}(id=${card.id})}" method="post">
+        <button class="btn alt" type="submit" name="q" value="1">공부하겠음</button>
+      </form>
+      <form th:action="@{/study/grade/{id}(id=${card.id})}" method="post">
+        <button class="btn" type="submit" name="q" value="3">알고있음</button>
+      </form>
+    </div>
+
+    <div class="muted">버튼을 눌러 정답을 확인하세요</div>
+  </div>
+</div>
+
+<script>
+  const started = Date.now();
+  setInterval(()=>{ document.getElementById('timer').textContent = Math.floor((Date.now()-started)/1000); }, 1000);
+  function show(id){ const el = document.getElementById(id); if(el) el.style.display='block'; }
+</script>
+</body>
+</html>
