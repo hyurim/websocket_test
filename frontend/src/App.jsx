@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Login from "./pages/User/Login";
 import Signup from "./pages/User/Signup";
 import Logout from "./pages/User/Logout";
+import ChatRoom from "./pages/ChatRoom";
 
 const App = () => {
   const { user } = useAuth();
@@ -33,11 +34,10 @@ const App = () => {
 
       <Routes>
         <Route path="/" element={<Home />} />
-
+				<Route path="/chat/:roomId" element={<ChatRoom />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/logout" element={<Logout />} />
-
         <Route path="*" element={<NotFound />} />
       </Routes>
 
