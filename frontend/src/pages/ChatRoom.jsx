@@ -69,8 +69,7 @@ export default function ChatRoom() {
 			setMessages((prev) => [...prev, mine]);
 			setTimeout(scrollToBottom, 0);
 			
-			// ② 실제 전송 (실패하면 롤백)
-			sendChat(clientRef.current, roomId, text, token).catch((e) => {
+			sendChat(clientRef.current, roomId, text).catch((e) => {
 			console.error(e);
 			setMessages((prev) => prev.filter((m) => m !== mine));
 			alert("메시지 전송 실패");

@@ -13,6 +13,11 @@ export default defineConfig({
   base: "/kanji-study/",
   server: {
     proxy: {
+      "/ws-chat": {
+        target: process.env.VITE_API_BASE,
+        changeOrigin: true,
+        ws: true,
+      },
       "/api": {
         target: "http://localhost:8081",
         changeOrigin: true,

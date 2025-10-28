@@ -33,7 +33,7 @@ public class ChatServiceImpl implements ChatService {
                 ChatMessageEntity.builder()
                         .roomId(req.roomId())
                         .senderId(userId)
-                        .message(req.text())
+                        .message(req.content())
                         .build()
         );
         return new ChatMessageRes(
