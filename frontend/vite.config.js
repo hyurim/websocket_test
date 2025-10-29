@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/ws-chat": {
-        target: process.env.VITE_API_BASE,
+        target: "http://localhost:8081",
         changeOrigin: true,
         ws: true,
       },
