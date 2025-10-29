@@ -4,7 +4,8 @@ import java.time.Instant;
 
 public record ChatHistoryRes(
         Long id,
-        String senderLoginId,
-        String text,
+        Long roomId,
+        String sender,
+        String message,
         Instant sentAt
 ) {}
