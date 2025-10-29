@@ -142,6 +142,13 @@ export default function ChatRoom() {
     }
   }
 
+	useEffect(() => {
+		// 메시지가 바뀔 때마다 자동 스크롤
+		if (messages.length > 0) {
+			scrollToBottom();
+		}
+	}, [messages]);
+
   return (
     <div style={{ padding: 16 }}>
       <h2>Room #{roomId}</h2>
