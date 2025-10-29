@@ -24,7 +24,7 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public ChatMessageRes saveMessage(String senderLoginId, ChatSendReq req) {
         Long userId = accessService.getUserIdByLoginId(senderLoginId);
-        // 방 참여자 검증
+
         if (!accessService.isParticipant(req.roomId(), userId)) {
             throw new IllegalArgumentException("방 참여자가 아님: room=" + req.roomId());
         }
@@ -36,11 +36,14 @@ public class ChatServiceImpl implements ChatService {
                         .message(req.content())
                         .build()
         );
+
         return new ChatMessageRes(
+                saved.getId(),            // ★ PK
                 saved.getRoomId(),
                 senderLoginId,
                 saved.getMessage(),
-                saved.getCreatedAt()
+                saved.getCreatedAt(),
+                req.clientMsgId()         // 그대로 전달(없으면 null)
         );
     }
 
@@ -51,13 +54,14 @@ public class ChatServiceImpl implements ChatService {
                 .map(e -> {
                     String senderLoginId = userRepo.findById(e.getSenderId())
                             .map(u -> u.getLoginId())
-                            .orElse(null); // 삭제된 유저면 null 허용
-
+                            .orElse(null);
                     return new ChatMessageRes(
+                            e.getId(),              // ★ PK
                             e.getRoomId(),
                             senderLoginId,
                             e.getMessage(),
-                            e.getCreatedAt()
+                            e.getCreatedAt(),
+                            null                    // 히스토리는 clientMsgId 없음
                     );
                 });
     }

@@ -6,5 +6,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record ChatSendReq(
         @NotNull @Min(1) Long roomId,
-        @NotBlank String content
+        @NotBlank String content,
+        String clientMsgId
 ) {}

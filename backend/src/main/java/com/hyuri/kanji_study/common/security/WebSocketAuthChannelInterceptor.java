@@ -2,6 +2,7 @@ package com.hyuri.kanji_study.common.security;
 
 import com.hyuri.kanji_study.auth.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
@@ -24,36 +26,48 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor acc = StompHeaderAccessor.wrap(message);
 
-        if (StompCommand.CONNECT == acc.getCommand()) {
-            String token = null;
-            var authHeaders = acc.getNativeHeader("Authorization");
-            if (authHeaders != null && !authHeaders.isEmpty()) {
-                String h = authHeaders.get(0);
-                if (h != null && h.startsWith("Bearer ")) token = h.substring(7);
-            }
+        if (acc.getCommand() != null) {
+            log.info("[WS] INBOUND {}", acc.getCommand());
+        }
+
+        // ① CONNECT: 토큰 검증 → Principal 설정 + 세션에 백업 저장
+        if (StompCommand.CONNECT.equals(acc.getCommand())) {
+            String raw = acc.getFirstNativeHeader("Authorization");
+            log.info("[WS] CONNECT try: {}", raw);
+
+            String token = (raw != null && raw.startsWith("Bearer ")) ? raw.substring(7) : null;
             if (token == null || token.isBlank()) {
                 throw new IllegalArgumentException("Bearer <token>을 찾을 수 없음.");
             }
 
-            try {
+            String loginId = jwtUtil.extractLoginId(token);
+            if (!jwtUtil.validateToken(token, loginId)) {
+                throw new IllegalArgumentException("JWT가 유효하지 않거나 만료됨.");
+            }
 
-                String loginId = jwtUtil.extractLoginId(token); // or extractUsername(token)
+            Authentication auth = new UsernamePasswordAuthenticationToken(
+                    loginId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
-                // 검증
-                if (!jwtUtil.validateToken(token, loginId)) {
-                    throw new IllegalArgumentException("JWT가 유효하지 않거나 만료됨.");
-                }
+            acc.setUser(auth); // ← 이후 세션에 유지되어야 함
+            // 세션 백업 (혹시 환경에 따라 principal이 누락되는 경우 대비)
+            acc.getSessionAttributes().put("loginId", loginId);
 
-                Authentication user = new UsernamePasswordAuthenticationToken(
-                        loginId, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
-                );
-                acc.setUser(user);
+            log.info("[WS] CONNECT ok user={}", loginId);
+        }
 
-            } catch (io.jsonwebtoken.JwtException e) {
-                // 서명 불일치, 만료 등 JJWT 예외는 여기서 잡아 커넥션 거부
-                throw new IllegalArgumentException("JWT 서명 불일치 혹은 만료됨. failed: " + e.getMessage(), e);
+        // ② SEND: 드물게 principal이 비는 경우 세션 값으로 보정
+        if (StompCommand.SEND.equals(acc.getCommand()) && acc.getUser() == null) {
+            Object lid = acc.getSessionAttributes() != null ? acc.getSessionAttributes().get("loginId") : null;
+            if (lid != null) {
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        lid.toString(), null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                acc.setUser(auth);
+                log.info("[WS] SEND backfill user={}", lid);
+            } else {
+                log.warn("[WS] SEND without principal and no session backup");
             }
         }
+
         return message;
     }
 }
