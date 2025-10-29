@@ -62,31 +62,53 @@ export default function ChatRoom() {
     return () => leaveRoom(roomId, accessToken).catch(console.error);
   }, [roomId, accessToken]);
 
-  // 히스토리: 역순 → 정규화 → 디듀프 → 세팅
-  useEffect(() => {
-    if (!accessToken) return;
-    fetchHistory(roomId, 0, 50, accessToken)
-      .then((slice) => {
-        const arr = (slice?.content || []).reverse().map((r) => normalizeMsg(r, roomId));
 
-        // 디듀프
-        const uniq = [];
-        const localSeen = new Set();
-        for (const m of arr) {
-          const k = msgKey(m);
-          if (localSeen.has(k)) continue;
-          localSeen.add(k);
-          uniq.push(m);
-        }
+useEffect(() => {
+  if (!accessToken) return;
+  let canceled = false;
 
-        // 이후 실시간 중복 방지용으로 seenKeysRef에도 반영
-        seenKeysRef.current = new Set(localSeen);
+  (async () => {
+    try {
+      await joinRoom(roomId, accessToken);
+      if (canceled) return;
 
+
+      const slice = await fetchHistory(roomId, 0, 50, accessToken);
+
+      const rawList = Array.isArray(slice?.content)
+        ? slice.content
+        : Array.isArray(slice)
+        ? slice
+        : [];
+
+      const arr = rawList.map((r) => normalizeMsg(r, roomId));
+
+      const uniq = [];
+      const localSeen = new Set();
+      for (const m of arr) {
+        const k = msgKey(m);
+        if (localSeen.has(k)) continue;
+        localSeen.add(k);
+        uniq.push(m);
+      }
+
+      seenKeysRef.current = new Set(localSeen);
+
+      if (!canceled) {
         setMessages(uniq);
-        scrollToBottom();
-      })
-      .catch(console.error);
-  }, [roomId, accessToken]);
+      }
+
+      setTimeout(scrollToBottom, 0);
+    } catch (e) {
+      console.error("[history load fail]", e);
+    }
+  })();
+
+  return () => {
+    canceled = true;
+    leaveRoom(roomId, accessToken).catch(() => {});
+  };
+}, [roomId, accessToken]);
 
   // 실시간
   useEffect(() => {
