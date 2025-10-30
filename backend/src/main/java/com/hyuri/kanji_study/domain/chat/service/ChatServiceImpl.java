@@ -25,10 +25,12 @@ public class ChatServiceImpl implements ChatService {
     public ChatMessageRes saveMessage(String senderLoginId, ChatSendReq req) {
         Long userId = accessService.getUserIdByLoginId(senderLoginId);
 
+        // 1) 참여자 아니라면 먼저 join 시도
         if (!accessService.isParticipant(req.roomId(), userId)) {
-            throw new IllegalArgumentException("방 참여자가 아님: room=" + req.roomId());
+            accessService.join(req.roomId(), userId);
         }
 
+        // 2) 이제 메시지 저장
         var saved = messageRepo.save(
                 ChatMessageEntity.builder()
                         .roomId(req.roomId())
@@ -38,12 +40,12 @@ public class ChatServiceImpl implements ChatService {
         );
 
         return new ChatMessageRes(
-                saved.getId(),            // ★ PK
+                saved.getId(),
                 saved.getRoomId(),
                 senderLoginId,
                 saved.getMessage(),
                 saved.getCreatedAt(),
-                req.clientMsgId()         // 그대로 전달(없으면 null)
+                req.clientMsgId()
         );
     }
 
