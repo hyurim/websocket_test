@@ -44,42 +44,54 @@ export function AuthProvider({ children }){
     }
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        if (accessToken) {
-          await fetchMe();
-        } else {
-          if (suppressAutoRefresh) return;
-          if (attemptedInitialRefresh) return;
-
-          const everLoggedIn = localStorage.getItem("everLoggedIn") === "1";
-          if (!everLoggedIn) {
-            setUser(null);
-            return;
-          }
-
-          setAttemptedInitialRefresh(true);
-          try {
-            const { data } = await api.post("/token/refresh", {}, { withCredentials: true });
-            const token = data?.access_token || data?.accessToken || data?.token;
-            if (token) {
-              setAccessToken(token);
-              await fetchMe();
-            } else {
-              localStorage.removeItem("everLoggedIn");
-              setUser(null);
-            }
-          } catch (e) {
-            localStorage.removeItem("everLoggedIn");
-            setUser(null);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [accessToken, fetchMe, attemptedInitialRefresh, suppressAutoRefresh]);
+	useEffect(() => {
+		(async () => {
+			try {
+				const t = accessToken;
+	
+				if (t) {
+					if (isExpired(t)) {
+						sessionStorage.removeItem("access_token");
+						setAccessToken("");
+					} else {
+						await fetchMe();
+						return;
+					}
+				}
+	
+				if (suppressAutoRefresh) return;
+				if (attemptedInitialRefresh) return;
+	
+				const everLoggedIn = localStorage.getItem("everLoggedIn") === "1";
+				if (!everLoggedIn) {
+					setUser(null);
+					return;
+				}
+	
+				setAttemptedInitialRefresh(true);
+				try {
+					const { data } = await api.post("/token/refresh", {}, { withCredentials: true });
+					const token = data?.access_token || data?.accessToken || data?.token;
+					if (token) {
+						setAccessToken(token);
+						await fetchMe();
+					} else {
+						sessionStorage.removeItem("access_token");
+						localStorage.removeItem("everLoggedIn");
+						setAccessToken("");
+						setUser(null);
+					}
+				} catch (e) {
+					sessionStorage.removeItem("access_token");
+					localStorage.removeItem("everLoggedIn");
+					setAccessToken("");
+					setUser(null);
+				}
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, [accessToken, fetchMe, attemptedInitialRefresh, suppressAutoRefresh]);
 
   const login = useCallback(async (loginId, password) => {
     const { data } = await api.post("/login", { loginId, password }, { withCredentials: true });
@@ -117,6 +129,15 @@ export function AuthProvider({ children }){
     }, 1500);
   }, []);
 
+	const isExpired = (token) => {
+		try {
+			const payload = JSON.parse(atob(token.split(".")[1] || ""));
+			const nowSec = Math.floor(Date.now() / 1000);
+			return payload.exp && payload.exp < nowSec;
+		} catch {
+			return true;
+		}
+	}
   const value = useMemo(
     () => ({ user, accessToken, login, signup, logout, loading, API_BASE }),
     [user, accessToken, login, signup, logout, loading]
