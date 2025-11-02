@@ -62,7 +62,7 @@ export function AuthProvider({ children }){
 				if (suppressAutoRefresh) return;
 				if (attemptedInitialRefresh) return;
 	
-				const everLoggedIn = localStorage.getItem("everLoggedIn") === "1";
+				const everLoggedIn = sessionStorage.getItem("everLoggedIn") === "1";
 				if (!everLoggedIn) {
 					setUser(null);
 					return;
@@ -77,13 +77,13 @@ export function AuthProvider({ children }){
 						await fetchMe();
 					} else {
 						sessionStorage.removeItem("access_token");
-						localStorage.removeItem("everLoggedIn");
+						sessionStorage.removeItem("everLoggedIn");
 						setAccessToken("");
 						setUser(null);
 					}
 				} catch (e) {
 					sessionStorage.removeItem("access_token");
-					localStorage.removeItem("everLoggedIn");
+					sessionStorage.removeItem("everLoggedIn");
 					setAccessToken("");
 					setUser(null);
 				}
@@ -99,7 +99,7 @@ export function AuthProvider({ children }){
     if (!token) throw new Error("No access token returned");
 
     setAccessToken(token);
-    localStorage.setItem("everLoggedIn", "1");
+    sessionStorage.setItem("everLoggedIn", "1");
 
     const { data: me } = await api.get("/me", {
       headers: { Authorization: `Bearer ${token}` },
@@ -120,7 +120,7 @@ export function AuthProvider({ children }){
     } catch {}
     setAccessToken("");
     setUser(null);
-    localStorage.removeItem("everLoggedIn");
+    sessionStorage.removeItem("everLoggedIn");
     setSuppressAutoRefresh(true);
     setAttemptedInitialRefresh(true);
     setTimeout(() => {
