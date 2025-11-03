@@ -56,7 +56,4 @@ public class NotificationEntity {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<NotificationEntity> notifications = new ArrayList<>();
 }
