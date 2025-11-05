@@ -1,11 +1,13 @@
 import { Routes, Route, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "./auth/useAuth";
 import Home from "./pages/Home";
 import Login from "./pages/User/Login";
 import Signup from "./pages/User/Signup";
 import Logout from "./pages/User/Logout";
 import ChatRoom from "./pages/ChatRoom";
+import NotificationList from "./pages/Notification/NotificationList";
+import { fetchUnreadCount } from "./services/notification";
 
 const App = () => {
   const { user } = useAuth();
@@ -14,6 +16,24 @@ const App = () => {
   // 모달 열림 상태 & 입력값 상태
   const [openModal, setOpenModal] = useState(false);
   const [roomInput, setRoomInput] = useState("");
+	const [openNotifications, setOpenNotifications] = useState(false);
+	const [unreadCount, setUnreadCount] = useState(0);
+
+	useEffect(() => {
+    if (!user) return;
+    const loadUnread = async () => {
+      try {
+        const count = await fetchUnreadCount();
+        setUnreadCount(count);
+      } catch (e) {
+        console.error("unread count error", e);
+      }
+    };
+
+    loadUnread(); // 최초 1회
+    const interval = setInterval(loadUnread, 1000); // 1초마다 갱신
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleOpenModal = () => {
     setOpenModal(true);
@@ -32,6 +52,7 @@ const App = () => {
     setOpenModal(false);
   };
 
+	
   return (
     <div
       style={{
@@ -51,6 +72,7 @@ const App = () => {
           borderBottom: "1px solid #ddd",
           paddingBottom: 12,
           flexWrap: "wrap",
+					position: "relative",
         }}
       >
         <h1 style={{ fontSize: 22, marginRight: "auto" }}>Kanji Study</h1>
@@ -79,6 +101,45 @@ const App = () => {
             >
               {user?.nickname} 님
             </span>
+
+						<button
+  onClick={() => setOpenNotifications((v) => !v)}
+  style={{
+    position: "relative",
+    padding: "6px 10px",
+    borderRadius: 8,
+    border: "1px solid #004488",
+    background: "#fff",
+    color: "#004488",
+    fontSize: 12,
+    lineHeight: 1.2,
+    cursor: "pointer",
+  }}
+>
+  🔔 알림
+  {unreadCount > 0 && (
+    <span
+      style={{
+        position: "absolute",
+        top: -4,
+        right: -4,
+        background: "#e53935",
+        color: "#fff",
+        borderRadius: "50%",
+        fontSize: 10,
+        width: 18,
+        height: 18,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 600,
+      }}
+    >
+      {unreadCount}
+    </span>
+  )}
+</button>
+
             <NavLink to="/logout" style={linkStyle}>
               로그아웃
             </NavLink>
@@ -102,6 +163,26 @@ const App = () => {
         >
           채팅방 입장
         </button>
+
+				{openNotifications && (
+  <div
+    style={{
+      position: "absolute",
+      top: 60,
+      right: 16,
+      background: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: 8,
+      padding: 12,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      width: 320,
+      zIndex: 999,
+    }}
+  >
+    <NotificationList />
+  </div>
+)}
+				
       </header>
 
       {/* 라우터 영역 */}
