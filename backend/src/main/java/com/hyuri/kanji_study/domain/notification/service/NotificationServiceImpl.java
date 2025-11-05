@@ -1,6 +1,6 @@
 package com.hyuri.kanji_study.domain.notification.service;
 
-import com.hyuri.kanji_study.domain.notification.dto.NotificationDTO;
+import com.hyuri.kanji_study.domain.notification.dto.NotificationDto;
 import com.hyuri.kanji_study.domain.notification.entity.NotificationEntity;
 import com.hyuri.kanji_study.domain.notification.repository.NotificationRepository;
 import com.hyuri.kanji_study.domain.user.entity.UserEntity;
@@ -22,12 +22,12 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepo;
 
 
-    public List<NotificationDTO> getNotifications(String loginId) {
+    public List<NotificationDto> getNotifications(String loginId) {
         UserEntity user = getUserOrThrow(loginId);
         List<NotificationEntity> entities = notificationRepo.findByUserOrderByCreatedAtDesc(user);
 
         return entities.stream()
-                .map(e -> NotificationDTO.builder()
+                .map(e -> NotificationDto.builder()
                         .id(e.getNotificationId())
                         .type(e.getType())
                         .message(e.getMessage())
